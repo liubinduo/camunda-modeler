@@ -163,10 +163,6 @@ renderer.on('dialog:saving-denied', function(done) {
   dialog.showDialog('savingDenied', done);
 });
 
-renderer.on('dialog:content-changed', function(done) {
-  dialog.showDialog('contentChanged', done);
-});
-
 renderer.on('dialog:open-files', async function(options, done) {
   const {
     activeFile
