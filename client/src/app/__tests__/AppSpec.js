@@ -412,19 +412,21 @@ describe('<App>', function() {
 
   describe('tab saving', function() {
 
-    let showSaveFileDialogSpy,
-        writeFileSpy,
+    let app,
         dialog,
-        app;
+        fileSystem,
+        showSaveFileDialogSpy,
+        showSaveFileErrorDialogSpy,
+        writeFileSpy;
 
     beforeEach(function() {
 
       // given
       dialog = new Dialog();
+      fileSystem = new FileSystem();
 
       showSaveFileDialogSpy = spy(dialog, 'showSaveFileDialog');
-
-      const fileSystem = new FileSystem();
+      showSaveFileErrorDialogSpy = spy(dialog, 'showSaveFileErrorDialog');
 
       writeFileSpy = spy(fileSystem, 'writeFile');
 
@@ -521,24 +523,75 @@ describe('<App>', function() {
 
     it('should save all tabs');
 
+
+    it('should handle save error <cancel>', async function() {
+
+      // given
+      await app.createDiagram();
+
+      dialog.setShowSaveFileDialogResponse('foo.svg');
+      dialog.setShowSaveFileErrorDialogResponse('cancel');
+
+      const err = new Error('foo');
+
+      fileSystem.setWriteFileResponse(Promise.reject(err));
+
+      // when
+      await app.triggerAction('save-as');
+
+      // then
+      expect(showSaveFileErrorDialogSpy).to.have.been.called;
+    });
+
+
+    it('should handle save error <save-as>', async function() {
+
+      // given
+      await app.createDiagram();
+
+      dialog.setShowSaveFileDialogResponse('foo.svg');
+      dialog.setShowSaveFileErrorDialogResponse('save-as');
+
+      const err = new Error('foo');
+
+      fileSystem.setWriteFileResponse(0, Promise.reject(err));
+      fileSystem.setWriteFileResponse(1, Promise.resolve({
+        contents: '<contents>'
+      }));
+
+      const saveTabSpy = spy(app, 'saveTab');
+
+      // when
+      await app.triggerAction('save-as');
+
+      // then
+      expect(showSaveFileErrorDialogSpy).to.have.been.called;
+
+      expect(saveTabSpy).to.have.been.calledTwice;
+      expect(writeFileSpy).to.have.been.calledTwice;
+    });
+
   });
 
 
   describe('tab exporting', function() {
 
-    let showSaveFileDialogSpy,
+    let app,
+        dialog,
+        fileSystem,
+        showSaveFileDialogSpy,
+        showSaveFileErrorDialogSpy,
         writeFileSpy;
-
-    let dialog, app;
 
     beforeEach(function() {
 
       // given
       dialog = new Dialog();
-
-      const fileSystem = new FileSystem();
+      fileSystem = new FileSystem();
 
       showSaveFileDialogSpy = spy(dialog, 'showSaveFileDialog');
+      showSaveFileErrorDialogSpy = spy(dialog, 'showSaveFileErrorDialog');
+
       writeFileSpy = spy(fileSystem, 'writeFile');
 
       const rendered = createApp({
@@ -574,7 +627,8 @@ describe('<App>', function() {
         }, {
           encoding: 'utf8',
           fileType: 'svg'
-        });
+        }
+      );
     });
 
 
@@ -600,7 +654,56 @@ describe('<App>', function() {
         }, {
           encoding: 'base64',
           fileType: 'png'
-        });
+        }
+      );
+    });
+
+
+    it('should handle export error <cancel>', async function() {
+
+      // given
+      await app.createDiagram();
+
+      dialog.setShowSaveFileDialogResponse('foo.svg');
+      dialog.setShowSaveFileErrorDialogResponse('cancel');
+
+      const err = new Error('foo');
+
+      fileSystem.setWriteFileResponse(Promise.reject(err));
+
+      // when
+      await app.triggerAction('export-as');
+
+      // then
+      expect(showSaveFileErrorDialogSpy).to.have.been.called;
+    });
+
+
+    it('should handle export error <export-as>', async function() {
+
+      // given
+      await app.createDiagram();
+
+      dialog.setShowSaveFileDialogResponse('foo.svg');
+      dialog.setShowSaveFileErrorDialogResponse('export-as');
+
+      const err = new Error('foo');
+
+      fileSystem.setWriteFileResponse(0, Promise.reject(err));
+      fileSystem.setWriteFileResponse(1, Promise.resolve({
+        contents: '<contents>'
+      }));
+
+      const exportAsSpy = spy(app, 'exportAs');
+
+      // when
+      await app.triggerAction('export-as');
+
+      // then
+      expect(showSaveFileErrorDialogSpy).to.have.been.called;
+
+      expect(exportAsSpy).to.have.been.calledTwice;
+      expect(writeFileSpy).to.have.been.calledTwice;
     });
 
   });
