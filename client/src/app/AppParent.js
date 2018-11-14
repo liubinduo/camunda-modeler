@@ -175,6 +175,11 @@ export default class AppParent extends Component {
     backend.once('client:started', () => {
       document.body.classList.remove('loading');
     });
+
+    backend.on('client:window-focused', (event) => {
+      this.triggerAction(event, 'check-file-changed');
+    });
+
   }
 
   componentWillUnmount() {
