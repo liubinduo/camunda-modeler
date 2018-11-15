@@ -146,7 +146,6 @@ export class BpmnEditor extends CachedComponent {
 
     [
       'import.done',
-      'saveXML.done',
       'commandStack.changed',
       'selection.changed',
       'attach'
@@ -366,6 +365,8 @@ export class BpmnEditor extends CachedComponent {
           this.handleError({
             error: err
           });
+
+          this.handleChanged();
 
           return reject(err);
         }
